@@ -1,0 +1,30 @@
+<!doctype html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;background:#111;color:#eee;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:12px}
+h1{margin:0 0 8px}
+.row{display:flex;gap:8px;width:min(90%,440px)}
+button{font-size:18px;padding:14px;border:0;border-radius:10px;background:#c0392b;color:#fff}
+.play{flex:1}
+.chg{background:#444;font-size:14px}
+</style></head><body>
+<h1>Strike Force Heroes</h1>
+<div id="l"></div>
+<script>
+const names=["Strike Force Heroes 1","Strike Force Heroes 2","Strike Force Heroes 3"];
+const l=document.getElementById("l");
+names.forEach((nm,i)=>{
+  const n=i+1, has=Android.has(n);
+  const row=document.createElement("div"); row.className="row"; row.style.marginBottom="10px";
+  const b=document.createElement("button"); b.className="play";
+  b.textContent=has?("▶ "+nm):(nm+" – choose .swf");
+  b.onclick=()=>has?Android.play(n):Android.choose(n);
+  row.appendChild(b);
+  if(has){
+    const c=document.createElement("button"); c.className="chg"; c.textContent="Change file";
+    c.onclick=()=>Android.choose(n);
+    row.appendChild(c);
+  }
+  l.appendChild(row);
+});
+</script></body></html>
