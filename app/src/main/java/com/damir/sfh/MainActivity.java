@@ -29,6 +29,7 @@ public class MainActivity extends Activity {
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         web = new WebView(this);
+        web.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         setContentView(web);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
