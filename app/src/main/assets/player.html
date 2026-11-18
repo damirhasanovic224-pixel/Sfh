@@ -1,13 +1,82 @@
 <!doctype html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#p{width:100%;height:100%}</style>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<style>
+*{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#p{position:absolute;inset:0}
+#joy{position:fixed;left:6%;bottom:8%;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);z-index:10}
+#knob{position:absolute;left:45px;top:45px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.45)}
+.b{position:fixed;width:64px;height:64px;border-radius:50%;background:rgba(192,57,43,.55);border:2px solid rgba(255,255,255,.5);color:#fff;font:bold 24px sans-serif;display:flex;align-items:center;justify-content:center;z-index:10}
+.b.on{background:rgba(255,255,255,.6);color:#000}
+</style>
 <script>window.RufflePlayer=window.RufflePlayer||{};window.RufflePlayer.config={publicPath:"/assets/ruffle/"};</script>
 <script src="/assets/ruffle/ruffle.js"></script>
-</head><body><div id="p"></div>
+</head><body>
+<div id="p"></div>
+<div id="joy"><div id="knob"></div></div>
+<div class="b" data-k="q" style="right:6%;bottom:calc(8% + 78px)">Q</div>
+<div class="b" data-k="r" style="right:calc(6% + 78px);bottom:8%">R</div>
+<div class="b" data-k="e" style="right:6%;bottom:8%">E</div>
 <script>
+let pl=null;
+const KEYS={w:["w","KeyW",87],a:["a","KeyA",65],s:["s","KeyS",83],d:["d","KeyD",68],q:["q","KeyQ",81],r:["r","KeyR",82],e:["e","KeyE",69]};
+const down={};
+function target(){
+  return (pl&&pl.shadowRoot&&pl.shadowRoot.querySelector("canvas"))||pl||document;
+}
+function send(k,type){
+  const x=KEYS[k];
+  target().dispatchEvent(new KeyboardEvent(type,{key:x[0],code:x[1],keyCode:x[2],which:x[2],bubbles:true,cancelable:true,composed:true}));
+}
+function press(k){
+  if(down[k])return;
+  down[k]=1;
+  try{pl&&pl.focus();}catch(e){}
+  send(k,"keydown");
+}
+function release(k){
+  if(!down[k])return;
+  down[k]=0;
+  send(k,"keyup");
+}
+function set(k,on){on?press(k):release(k);}
+
+window.addEventListener("contextmenu",e=>{e.preventDefault();e.stopImmediatePropagation();},true);
+document.addEventListener("visibilitychange",()=>{Object.keys(down).forEach(release);});
+
+document.querySelectorAll(".b").forEach(el=>{
+  const k=el.dataset.k;
+  el.addEventListener("pointerdown",e=>{e.preventDefault();el.setPointerCapture(e.pointerId);el.classList.add("on");press(k);});
+  const up=()=>{el.classList.remove("on");release(k);};
+  el.addEventListener("pointerup",up);
+  el.addEventListener("pointercancel",up);
+});
+
+const joy=document.getElementById("joy"),knob=document.getElementById("knob");
+let jid=null;
+function jmove(e){
+  const r=joy.getBoundingClientRect(),R=r.width/2;
+  let dx=e.clientX-(r.left+R),dy=e.clientY-(r.top+R);
+  const d=Math.hypot(dx,dy);
+  if(d>R){dx*=R/d;dy*=R/d;}
+  knob.style.transform="translate("+dx+"px,"+dy+"px)";
+  set("a",dx<-R*0.3);set("d",dx>R*0.3);
+  set("w",dy<-R*0.5);set("s",dy>R*0.5);
+}
+function jend(e){
+  if(e.pointerId!==jid)return;
+  jid=null;
+  knob.style.transform="";
+  ["w","a","s","d"].forEach(release);
+}
+joy.addEventListener("pointerdown",e=>{e.preventDefault();jid=e.pointerId;joy.setPointerCapture(jid);jmove(e);});
+joy.addEventListener("pointermove",e=>{if(e.pointerId===jid)jmove(e);});
+joy.addEventListener("pointerup",jend);
+joy.addEventListener("pointercancel",jend);
+
 window.addEventListener("load",()=>{
   const g=new URLSearchParams(location.search).get("g");
-  const pl=window.RufflePlayer.newest().createPlayer();
+  pl=window.RufflePlayer.newest().createPlayer();
   pl.style.width="100%";pl.style.height="100%";
   document.getElementById("p").appendChild(pl);
   pl.ruffle().load({url:"/swf/game"+g+".swf",autoplay:"on",unmuteOverlay:"hidden",letterbox:"on",splashScreen:false});
